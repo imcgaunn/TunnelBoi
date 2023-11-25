@@ -14,7 +14,8 @@ CADDY_HOST = "127.0.0.1"
 CADDY_API_PORT = "2019"
 
 
-def add_route(tunnel_id: str, host: str, port: str):
+def setup_tunnel(host: str, port: str):
+    tunnel_id = f"{host}-{port}"
     caddy_add_route_request = {
         "@id": tunnel_id,
         "match": [
@@ -22,7 +23,7 @@ def add_route(tunnel_id: str, host: str, port: str):
                 "host": [host],
             }
         ],
-        "handle": [{"handler": "reverse_proxy", "upstreams": [{"dial": ":" + port}]}],
+        "handle": [{"handler": "reverse_proxy", "upstreams": [{"dial": f":{port}"}]}],
     }
     body = json.dumps(caddy_add_route_request).encode("utf-8")
     headers = {"Content-Type": "application/json"}
@@ -33,10 +34,10 @@ def add_route(tunnel_id: str, host: str, port: str):
     req = request.Request(method="POST", url=create_url, headers=headers)
     resp = request.urlopen(req, body)
     logger.info("Tunnel created successfully")
-    return resp
+    return tunnel_id, resp
 
 
-def cleanup_route(tunnel_id: str):
+def cleanup_tunnel(tunnel_id: str):
     logger.info("Cleaning up tunnel")
     delete_url = f"http://{CADDY_HOST}:{CADDY_API_PORT}/id/{tunnel_id}"
     # DELETE route by id
@@ -48,18 +49,17 @@ def cleanup_route(tunnel_id: str):
 def main(args):
     host = args[0]
     port = args[1]
-    tunnel_id = host + "-" + port
 
     # call Caddy's api to create a reverse proxy forwarding traffic toward
     # host will be sent to :port on server
-    resp = add_route(tunnel_id, host, port)
+    tunnel_id, resp = setup_tunnel(host, port)
     logger.info(f"resp: {resp}")
 
     while True:
         try:
             time.sleep(1)
         except KeyboardInterrupt:
-            cleanup_route(tunnel_id)
+            cleanup_tunnel(tunnel_id)
             return
 
 
