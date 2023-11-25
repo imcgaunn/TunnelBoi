@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 APP_NAME = "tunnelboi"
 CADDY_HOST = "127.0.0.1"
-CADDY_PORT = "2019"
+CADDY_API_PORT = "2019"
 
 
 def add_route(tunnel_id: str, host: str, port: str):
@@ -27,7 +27,7 @@ def add_route(tunnel_id: str, host: str, port: str):
     body = json.dumps(caddy_add_route_request).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     create_url = (
-        f"http://{CADDY_HOST}:{CADDY_PORT}/config/apps/http/servers/{APP_NAME}/routes"
+        f"http://{CADDY_HOST}:{CADDY_API_PORT}/config/apps/http/servers/{APP_NAME}/routes"
     )
     # POST to caddy routes endpoint to add new route
     req = request.Request(method="POST", url=create_url, headers=headers)
@@ -38,7 +38,7 @@ def add_route(tunnel_id: str, host: str, port: str):
 
 def cleanup_route(tunnel_id: str):
     logger.info("Cleaning up tunnel")
-    delete_url = f"http://{CADDY_HOST}:{CADDY_PORT}/id/{tunnel_id}"
+    delete_url = f"http://{CADDY_HOST}:{CADDY_API_PORT}/id/{tunnel_id}"
     # DELETE route by id
     req = request.Request(method="DELETE", url=delete_url)
     resp = request.urlopen(req)
